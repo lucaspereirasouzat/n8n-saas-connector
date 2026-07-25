@@ -7,6 +7,10 @@ Monorepo com frontend e backend independentes. O frontend nunca recebe chaves do
 - `apps/web`: React + Vite (`http://localhost:5173`)
 - `apps/api`: Express + Stripe + API n8n (`http://localhost:3001`)
 
+O backend segue responsabilidades separadas em `controllers`, `routes`, `config`,
+`middleware`, `services`, `store`, `types` e `utils`. O arquivo `app.ts` monta os
+middlewares e as rotas, enquanto `index.ts` apenas valida o ambiente e inicia o servidor.
+
 ## Instalação e desenvolvimento
 
 ### Bun (recomendado)
@@ -28,6 +32,13 @@ npm install
 npm run dev           # ambos
 npm run dev:web       # somente frontend
 npm run dev:api       # somente backend
+```
+
+Para formatar ou apenas conferir a formatação de todo o monorepo:
+
+```bash
+npm run format
+npm run format:check
 ```
 
 ## Segurança e produção

@@ -1,28 +1,832 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowRight, Bell, Check, ChevronRight, Clock3, CreditCard, Gauge, LayoutDashboard, LifeBuoy, LockKeyhole, LogOut, Mail, Menu, Moon, Plus, Settings, Sparkles, Sun, Upload, UserRound, Workflow, X, Zap } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  ArrowRight,
+  Bell,
+  Check,
+  ChevronRight,
+  Clock3,
+  CreditCard,
+  Gauge,
+  LayoutDashboard,
+  LifeBuoy,
+  LockKeyhole,
+  LogOut,
+  Mail,
+  Menu,
+  Moon,
+  Plus,
+  Settings,
+  Sparkles,
+  Sun,
+  Upload,
+  UserRound,
+  Workflow,
+  X,
+  Zap,
+} from "lucide-react";
 
-type User={id:string;name:string;email:string;photo:string;theme:'light'|'dark'|'system';plan:string};
-type Integration={id:string;provider:string;name:string;active:boolean};
-const api=async(path:string,options?:RequestInit)=>{const r=await fetch(`/api${path}`,{...options,headers:{'Content-Type':'application/json',...options?.headers}});const body=r.status===204?{}:await r.json();if(!r.ok)throw new Error(body.error||'Algo deu errado');return body;};
-const go=(path:string)=>{history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'));};
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  photo: string;
+  theme: "light" | "dark" | "system";
+  plan: string;
+};
+type Integration = {
+  id: string;
+  provider: string;
+  name: string;
+  active: boolean;
+};
+const api = async (path: string, options?: RequestInit) => {
+  const r = await fetch(`/api${path}`, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...options?.headers },
+  });
+  const body = r.status === 204 ? {} : await r.json();
+  if (!r.ok) throw new Error(body.error || "Algo deu errado");
+  return body;
+};
+const go = (path: string) => {
+  history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+};
 
-export function App(){
- const [path,setPath]=useState(location.pathname);const [user,setUser]=useState<User>();const [loading,setLoading]=useState(true);
- useEffect(()=>{const on=()=>setPath(location.pathname);addEventListener('popstate',on);api('/auth/me').then(x=>setUser(x.user)).catch(()=>{}).finally(()=>setLoading(false));return()=>removeEventListener('popstate',on)},[]);
- useEffect(()=>{const theme=user?.theme==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):user?.theme||'light';document.documentElement.dataset.theme=theme},[user?.theme]);
- if(loading)return <div className="loader"><span className="logo"><Workflow/></span></div>;
- if(path==='/')return <Landing user={user}/>;
- if(['/login','/cadastro','/esqueci-senha'].includes(path))return <AuthPage mode={path.slice(1)} onLogin={setUser}/>;
- if(!user)return <AuthPage mode="login" onLogin={setUser}/>;
- const page=path==='/integracoes/nova'?<NewIntegration/>:path==='/planos'?<Plans user={user}/>:path==='/perfil'?<Profile user={user} onUpdate={setUser}/>:<Dashboard/>;
- return <Shell user={user} onLogout={()=>{api('/auth/logout',{method:'POST'}).finally(()=>{setUser(undefined);go('/login')})}}>{page}</Shell>;
+export function App() {
+  const [path, setPath] = useState(location.pathname);
+  const [user, setUser] = useState<User>();
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const on = () => setPath(location.pathname);
+    addEventListener("popstate", on);
+    api("/auth/me")
+      .then((x) => setUser(x.user))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    return () => removeEventListener("popstate", on);
+  }, []);
+  useEffect(() => {
+    const theme =
+      user?.theme === "system"
+        ? matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
+        : user?.theme || "light";
+    document.documentElement.dataset.theme = theme;
+  }, [user?.theme]);
+  if (loading)
+    return (
+      <div className="loader">
+        <span className="logo">
+          <Workflow />
+        </span>
+      </div>
+    );
+  if (path === "/") return <Landing user={user} />;
+  if (["/login", "/cadastro", "/esqueci-senha"].includes(path))
+    return <AuthPage mode={path.slice(1)} onLogin={setUser} />;
+  if (!user) return <AuthPage mode="login" onLogin={setUser} />;
+  const page =
+    path === "/integracoes/nova" ? (
+      <NewIntegration />
+    ) : path === "/planos" ? (
+      <Plans user={user} />
+    ) : path === "/perfil" ? (
+      <Profile user={user} onUpdate={setUser} />
+    ) : (
+      <Dashboard />
+    );
+  return (
+    <Shell
+      user={user}
+      onLogout={() => {
+        api("/auth/logout", { method: "POST" }).finally(() => {
+          setUser(undefined);
+          go("/login");
+        });
+      }}
+    >
+      {page}
+    </Shell>
+  );
 }
-function Landing({user}:{user?:User}){return <div className="landing"><nav className="landing-nav"><Brand/><div className="landing-links"><a href="#recursos">Recursos</a><a href="#como-funciona">Como funciona</a><button className="link" onClick={()=>go('/planos')}>Planos</button></div><div><button className="link" onClick={()=>go(user?'/dashboard':'/login')}>{user?'Dashboard':'Entrar'}</button><button className="primary" onClick={()=>go('/cadastro')}>Começar grátis</button></div></nav><main className="hero"><div className="pill"><Sparkles size={14}/> 14 dias grátis. Sem compromisso.</div><h1>Suas ferramentas trabalhando<br/><em>juntas, no automático.</em></h1><p>Conecte os aplicativos que sua empresa já usa e transforme tarefas repetitivas em fluxos simples, rápidos e inteligentes.</p><div className="hero-actions"><button className="primary big" onClick={()=>go('/cadastro')}>Criar minha conta <ArrowRight/></button><button className="secondary big" onClick={()=>go('/login')}>Ver demonstração</button></div><small>✓ Sem cartão de crédito &nbsp; ✓ Cancele quando quiser</small><div className="hero-card"><div><span className="mini-icon purple"><Mail/></span><b>Novo e-mail recebido</b></div><ChevronRight/><div><span className="mini-icon green"><Workflow/></span><b>n8n processa os dados</b></div><ChevronRight/><div><span className="mini-icon orange"><Zap/></span><b>Cliente respondido</b></div></div></main><section id="recursos" className="logos"><span>Conecte tudo que você já usa</span><b>WhatsApp</b><b>Gmail</b><b>Sheets</b><b>Slack</b><b>Stripe</b></section></div>}
-function AuthPage({mode,onLogin}:{mode:string;onLogin:(u:User)=>void}){const isRegister=mode==='cadastro',forgot=mode==='esqueci-senha';const [error,setError]=useState(''),[sent,setSent]=useState(false),[busy,setBusy]=useState(false);async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError('');const data=Object.fromEntries(new FormData(e.currentTarget));try{if(forgot){await api('/auth/forgot',{method:'POST',body:JSON.stringify(data)});setSent(true)}else{const x=await api(`/auth/${isRegister?'register':'login'}`,{method:'POST',body:JSON.stringify(data)});onLogin(x.user);go('/dashboard')}}catch(e){setError((e as Error).message)}finally{setBusy(false)}}return <div className="auth"><div className="auth-side"><Brand/><div><span className="quote-mark">“</span><h2>Automação não precisa<br/>ser complicada.</h2><p>Com a Flowly, sua equipe economiza tempo e foca no que realmente importa.</p><div className="quote-user"><span>MC</span><div><b>Marina Costa</b><small>Fundadora, Nuvem Studio</small></div></div></div><small>© 2026 Flowly</small></div><div className="auth-main"><button className="back" onClick={()=>go('/')}>← Voltar para o início</button><form onSubmit={submit} className="auth-form"><span className="mobile-logo"><Brand/></span><h1>{forgot?'Recupere sua senha':isRegister?'Crie sua conta':'Que bom ter você de volta'}</h1><p>{forgot?'Digite seu e-mail e enviaremos as instruções.':isRegister?'Comece seus 14 dias grátis.':'Entre para continuar gerenciando suas automações.'}</p>{sent?<div className="success"><Check/><b>Confira seu e-mail</b><p>Se houver uma conta, as instruções chegarão em instantes.</p></div>:<>{isRegister&&<label>Nome completo<input name="name" required minLength={2} placeholder="Como devemos chamar você?"/></label>}<label>E-mail<input name="email" required type="email" placeholder="voce@empresa.com"/></label>{!forgot&&<label>Senha <input name="password" required type="password" minLength={8} placeholder="Mínimo de 8 caracteres"/></label>}{error&&<div className="error">{error}</div>}<button disabled={busy} className="primary submit">{busy?'Aguarde...':forgot?'Enviar instruções':isRegister?'Criar conta grátis':'Entrar'}</button></>}{!forgot&&!isRegister&&<button type="button" className="text-button" onClick={()=>go('/esqueci-senha')}>Esqueci minha senha</button>}<div className="auth-switch">{forgot?'Lembrou sua senha?':isRegister?'Já tem uma conta?':'Ainda não tem uma conta?'} <button type="button" onClick={()=>go(forgot||isRegister?'/login':'/cadastro')}>{forgot?'Entrar':isRegister?'Fazer login':'Criar conta'}</button></div>{!forgot&&<small className="terms">Ao continuar, você concorda com os Termos de Uso e Política de Privacidade.</small>}</form></div></div>}
-function Brand(){return <button className="brand" onClick={()=>go('/')}><span className="logo"><Workflow/></span>flowly</button>}
-function Shell({user,onLogout,children}:{user:User;onLogout:()=>void;children:React.ReactNode}){const [open,setOpen]=useState(false);return <div className="shell"><aside className={open?'open':''}><div className="side-top"><Brand/><button className="close" onClick={()=>setOpen(false)}><X/></button></div><p className="nav-label">ESPAÇO DE TRABALHO</p><button className={location.pathname==='/dashboard'?'active':''} onClick={()=>go('/dashboard')}><LayoutDashboard/>Visão geral</button><button className={location.pathname.startsWith('/integracoes')?'active':''} onClick={()=>go('/integracoes/nova')}><Zap/>Integrações</button><p className="nav-label">CONTA</p><button className={location.pathname==='/planos'?'active':''} onClick={()=>go('/planos')}><CreditCard/>Planos e cobrança</button><button className={location.pathname==='/perfil'?'active':''} onClick={()=>go('/perfil')}><Settings/>Perfil e aparência</button><button><LifeBuoy/>Ajuda e suporte</button><div className="side-plan"><Sparkles/><div><b>Plano {user.plan}</b><small>14 dias de teste no upgrade</small></div><button onClick={()=>go('/planos')}>Ver planos</button></div><button className="logout" onClick={onLogout}><LogOut/>Sair</button></aside>{open&&<div className="overlay" onClick={()=>setOpen(false)}/>}<div className="app-main"><header><button className="menu" onClick={()=>setOpen(true)}><Menu/></button><div/><Bell/><button className="user-chip" onClick={()=>go('/perfil')}>{user.photo?<img src={user.photo}/>:<span>{user.name.split(' ').map(x=>x[0]).slice(0,2)}</span>}<div><b>{user.name}</b><small>{user.email}</small></div></button></header><main className="page">{children}</main></div></div>}
-function Dashboard(){const [data,setData]=useState<{integrations:Integration[];stats:{active:number;runs:number;savedHours:number}}>();useEffect(()=>{api('/dashboard').then(setData)},[]);const list=data?.integrations||[];return <><div className="page-title"><div><span className="eyebrow"><Sparkles/> SEU PAINEL</span><h1>Olá! 👋</h1><p>Acompanhe suas automações e ganhe tempo para o que importa.</p></div><button className="primary" onClick={()=>go('/integracoes/nova')}><Plus/> Nova integração</button></div><div className="stats"><Stat icon={<Zap/>} value={String(data?.stats.active||0).padStart(2,'0')} label="Integrações ativas"/><Stat icon={<Gauge/>} value={String(data?.stats.runs||0)} label="Execuções este mês"/><Stat icon={<Clock3/>} value={`${data?.stats.savedHours||0}h`} label="Tempo economizado"/></div><div className="section-title"><div><h2>Suas integrações</h2><p>Ative, pause ou gerencie seus fluxos.</p></div><button onClick={()=>go('/integracoes/nova')}>Adicionar nova →</button></div><div className="integration-grid">{list.map(i=><article key={i.id}><span className={`provider ${i.provider}`}>{i.provider[0].toUpperCase()}</span><h3>{i.name}</h3><p>{i.provider} conectado ao n8n</p><footer><span className={i.active?'online':''}>● {i.active?'Ativa':'Pausada'}</span><b>Gerenciar ›</b></footer></article>)}<button className="add-integration" onClick={()=>go('/integracoes/nova')}><Plus/><b>Adicionar integração</b><small>Conecte uma nova ferramenta</small></button></div></>}
-function Stat({icon,value,label}:{icon:React.ReactNode;value:string;label:string}){return <article className="stat"><span>{icon}</span><div><b>{value}</b><p>{label}</p><small>Atualizado agora</small></div></article>}
-function NewIntegration(){const [done,setDone]=useState(false),[error,setError]=useState('');async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();setError('');try{await api('/integrations',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.currentTarget)))});setDone(true)}catch(e){setError((e as Error).message)}}return <div className="narrow"><div className="page-title"><div><span className="eyebrow"><Zap/> INTEGRAÇÕES</span><h1>Conecte uma ferramenta</h1><p>Crie a integração aqui; as credenciais sensíveis ficam protegidas no n8n.</p></div></div>{done?<div className="success-card"><Check/><h2>Integração criada!</h2><p>Agora você pode configurar o workflow correspondente no n8n.</p><button className="primary" onClick={()=>go('/dashboard')}>Voltar ao painel</button></div>:<form className="panel form-panel" onSubmit={submit}><label>Ferramenta<select name="provider" required><option value="">Selecione...</option><option value="whatsapp">WhatsApp</option><option value="gmail">Gmail</option><option value="sheets">Google Sheets</option><option value="slack">Slack</option></select></label><label>Nome da integração<input name="name" required minLength={2} placeholder="Ex.: Atendimento comercial"/></label><div className="secure-note"><LockKeyhole/> Tokens e senhas não são enviados pelo frontend. Configure credenciais diretamente no n8n.</div>{error&&<div className="error">{error}</div>}<button className="primary submit">Criar integração</button></form>}</div>}
-function Plans({user}:{user:User}){const [error,setError]=useState('');async function checkout(plan:string){setError('');try{const x=await api('/billing/checkout',{method:'POST',body:JSON.stringify({plan})});location.href=x.url}catch(e){setError((e as Error).message)}}const plans=[{id:'free',name:'Grátis',price:'R$ 0',features:['2 integrações','2.000 tarefas/mês','Suporte por e-mail']},{id:'starter',name:'Starter',price:'R$ 49',featured:true,features:['10 integrações','20.000 tarefas/mês','Histórico de 30 dias','Suporte prioritário']},{id:'pro',name:'Pro',price:'R$ 129',features:['Integrações ilimitadas','100.000 tarefas/mês','Histórico de 90 dias','Suporte dedicado']}];return <><div className="center-title"><span className="pill"><Sparkles/> TESTE GRÁTIS POR 14 DIAS</span><h1>Um plano para cada momento</h1><p>Comece grátis e evolua quando suas automações crescerem.</p></div>{error&&<div className="error centered">{error}</div>}<div className="plans">{plans.map(p=><article className={p.featured?'featured':''} key={p.id}>{p.featured&&<div className="popular">MAIS POPULAR</div>}<h2>{p.name}</h2><div className="price">{p.price}<small>/mês</small></div>{p.id!=='free'&&<p>14 dias grátis, cobrança só depois.</p>}<ul>{p.features.map(f=><li key={f}><Check/>{f}</li>)}</ul><button disabled={p.id===user.plan} className={p.featured?'primary':'secondary'} onClick={()=>p.id!=='free'&&checkout(p.id)}>{p.id===user.plan?'Plano atual':p.id==='free'?'Grátis para sempre':'Testar grátis por 14 dias'}</button></article>)}</div><p className="billing-note"><LockKeyhole/> Alterações de plano e preços são validadas exclusivamente no servidor. O Stripe processa os dados de pagamento.</p></>}
-function Profile({user,onUpdate}:{user:User;onUpdate:(u:User)=>void}){const [draft,setDraft]=useState(user),[message,setMessage]=useState('');function photo(file?:File){if(!file)return;if(file.size>400_000){setMessage('A imagem deve ter no máximo 400 KB.');return}const reader=new FileReader();reader.onload=()=>setDraft({...draft,photo:String(reader.result)});reader.readAsDataURL(file)}async function save(){try{const x=await api('/profile',{method:'PATCH',body:JSON.stringify({name:draft.name,photo:draft.photo,theme:draft.theme})});onUpdate(x.user);setMessage('Perfil salvo com sucesso.')}catch(e){setMessage((e as Error).message)}}return <div className="narrow"><div className="page-title"><div><span className="eyebrow"><UserRound/> SUA CONTA</span><h1>Perfil e aparência</h1><p>Personalize como você aparece e escolha seu tema.</p></div></div><section className="panel profile-panel"><h2>Foto e informações</h2><div className="photo-row">{draft.photo?<img src={draft.photo}/>:<span>{draft.name[0]}</span>}<label className="secondary"><Upload/> Alterar foto<input type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={e=>photo(e.target.files?.[0])}/></label></div><label>Nome completo<input value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label><label>E-mail<input value={draft.email} disabled/><small>Entre em contato com o suporte para alterar seu e-mail.</small></label><h2>Aparência</h2><div className="themes">{(['light','dark','system'] as const).map(t=><button className={draft.theme===t?'selected':''} onClick={()=>setDraft({...draft,theme:t})} key={t}>{t==='light'?<Sun/>:t==='dark'?<Moon/>:<Settings/>}<b>{t==='light'?'Claro':t==='dark'?'Escuro':'Sistema'}</b></button>)}</div>{message&&<p className="form-message">{message}</p>}<button className="primary" onClick={save}>Salvar alterações</button></section></div>}
+function Landing({ user }: { user?: User }) {
+  return (
+    <div className="landing">
+      <nav className="landing-nav">
+        <Brand />
+        <div className="landing-links">
+          <a href="#recursos">Recursos</a>
+          <a href="#como-funciona">Como funciona</a>
+          <button className="link" onClick={() => go("/planos")}>
+            Planos
+          </button>
+        </div>
+        <div>
+          <button
+            className="link"
+            onClick={() => go(user ? "/dashboard" : "/login")}
+          >
+            {user ? "Dashboard" : "Entrar"}
+          </button>
+          <button className="primary" onClick={() => go("/cadastro")}>
+            Começar grátis
+          </button>
+        </div>
+      </nav>
+      <main className="hero">
+        <div className="pill">
+          <Sparkles size={14} /> 14 dias grátis. Sem compromisso.
+        </div>
+        <h1>
+          Suas ferramentas trabalhando
+          <br />
+          <em>juntas, no automático.</em>
+        </h1>
+        <p>
+          Conecte os aplicativos que sua empresa já usa e transforme tarefas
+          repetitivas em fluxos simples, rápidos e inteligentes.
+        </p>
+        <div className="hero-actions">
+          <button className="primary big" onClick={() => go("/cadastro")}>
+            Criar minha conta <ArrowRight />
+          </button>
+          <button className="secondary big" onClick={() => go("/login")}>
+            Ver demonstração
+          </button>
+        </div>
+        <small>✓ Sem cartão de crédito &nbsp; ✓ Cancele quando quiser</small>
+        <div className="hero-card">
+          <div>
+            <span className="mini-icon purple">
+              <Mail />
+            </span>
+            <b>Novo e-mail recebido</b>
+          </div>
+          <ChevronRight />
+          <div>
+            <span className="mini-icon green">
+              <Workflow />
+            </span>
+            <b>n8n processa os dados</b>
+          </div>
+          <ChevronRight />
+          <div>
+            <span className="mini-icon orange">
+              <Zap />
+            </span>
+            <b>Cliente respondido</b>
+          </div>
+        </div>
+      </main>
+      <section id="recursos" className="logos">
+        <span>Conecte tudo que você já usa</span>
+        <b>WhatsApp</b>
+        <b>Gmail</b>
+        <b>Sheets</b>
+        <b>Slack</b>
+        <b>Stripe</b>
+      </section>
+    </div>
+  );
+}
+function AuthPage({
+  mode,
+  onLogin,
+}: {
+  mode: string;
+  onLogin: (u: User) => void;
+}) {
+  const isRegister = mode === "cadastro",
+    forgot = mode === "esqueci-senha";
+  const [error, setError] = useState(""),
+    [sent, setSent] = useState(false),
+    [busy, setBusy] = useState(false);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    try {
+      if (forgot) {
+        await api("/auth/forgot", {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+        setSent(true);
+      } else {
+        const x = await api(`/auth/${isRegister ? "register" : "login"}`, {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+        onLogin(x.user);
+        go("/dashboard");
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="auth">
+      <div className="auth-side">
+        <Brand />
+        <div>
+          <span className="quote-mark">“</span>
+          <h2>
+            Automação não precisa
+            <br />
+            ser complicada.
+          </h2>
+          <p>
+            Com a Flowly, sua equipe economiza tempo e foca no que realmente
+            importa.
+          </p>
+          <div className="quote-user">
+            <span>MC</span>
+            <div>
+              <b>Marina Costa</b>
+              <small>Fundadora, Nuvem Studio</small>
+            </div>
+          </div>
+        </div>
+        <small>© 2026 Flowly</small>
+      </div>
+      <div className="auth-main">
+        <button className="back" onClick={() => go("/")}>
+          ← Voltar para o início
+        </button>
+        <form onSubmit={submit} className="auth-form">
+          <span className="mobile-logo">
+            <Brand />
+          </span>
+          <h1>
+            {forgot
+              ? "Recupere sua senha"
+              : isRegister
+                ? "Crie sua conta"
+                : "Que bom ter você de volta"}
+          </h1>
+          <p>
+            {forgot
+              ? "Digite seu e-mail e enviaremos as instruções."
+              : isRegister
+                ? "Comece seus 14 dias grátis."
+                : "Entre para continuar gerenciando suas automações."}
+          </p>
+          {sent ? (
+            <div className="success">
+              <Check />
+              <b>Confira seu e-mail</b>
+              <p>Se houver uma conta, as instruções chegarão em instantes.</p>
+            </div>
+          ) : (
+            <>
+              {isRegister && (
+                <label>
+                  Nome completo
+                  <input
+                    name="name"
+                    required
+                    minLength={2}
+                    placeholder="Como devemos chamar você?"
+                  />
+                </label>
+              )}
+              <label>
+                E-mail
+                <input
+                  name="email"
+                  required
+                  type="email"
+                  placeholder="voce@empresa.com"
+                />
+              </label>
+              {!forgot && (
+                <label>
+                  Senha{" "}
+                  <input
+                    name="password"
+                    required
+                    type="password"
+                    minLength={8}
+                    placeholder="Mínimo de 8 caracteres"
+                  />
+                </label>
+              )}
+              {error && <div className="error">{error}</div>}
+              <button disabled={busy} className="primary submit">
+                {busy
+                  ? "Aguarde..."
+                  : forgot
+                    ? "Enviar instruções"
+                    : isRegister
+                      ? "Criar conta grátis"
+                      : "Entrar"}
+              </button>
+            </>
+          )}
+          {!forgot && !isRegister && (
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => go("/esqueci-senha")}
+            >
+              Esqueci minha senha
+            </button>
+          )}
+          <div className="auth-switch">
+            {forgot
+              ? "Lembrou sua senha?"
+              : isRegister
+                ? "Já tem uma conta?"
+                : "Ainda não tem uma conta?"}{" "}
+            <button
+              type="button"
+              onClick={() => go(forgot || isRegister ? "/login" : "/cadastro")}
+            >
+              {forgot ? "Entrar" : isRegister ? "Fazer login" : "Criar conta"}
+            </button>
+          </div>
+          {!forgot && (
+            <small className="terms">
+              Ao continuar, você concorda com os Termos de Uso e Política de
+              Privacidade.
+            </small>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+function Brand() {
+  return (
+    <button className="brand" onClick={() => go("/")}>
+      <span className="logo">
+        <Workflow />
+      </span>
+      flowly
+    </button>
+  );
+}
+function Shell({
+  user,
+  onLogout,
+  children,
+}: {
+  user: User;
+  onLogout: () => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="shell">
+      <aside className={open ? "open" : ""}>
+        <div className="side-top">
+          <Brand />
+          <button className="close" onClick={() => setOpen(false)}>
+            <X />
+          </button>
+        </div>
+        <p className="nav-label">ESPAÇO DE TRABALHO</p>
+        <button
+          className={location.pathname === "/dashboard" ? "active" : ""}
+          onClick={() => go("/dashboard")}
+        >
+          <LayoutDashboard />
+          Visão geral
+        </button>
+        <button
+          className={
+            location.pathname.startsWith("/integracoes") ? "active" : ""
+          }
+          onClick={() => go("/integracoes/nova")}
+        >
+          <Zap />
+          Integrações
+        </button>
+        <p className="nav-label">CONTA</p>
+        <button
+          className={location.pathname === "/planos" ? "active" : ""}
+          onClick={() => go("/planos")}
+        >
+          <CreditCard />
+          Planos e cobrança
+        </button>
+        <button
+          className={location.pathname === "/perfil" ? "active" : ""}
+          onClick={() => go("/perfil")}
+        >
+          <Settings />
+          Perfil e aparência
+        </button>
+        <button>
+          <LifeBuoy />
+          Ajuda e suporte
+        </button>
+        <div className="side-plan">
+          <Sparkles />
+          <div>
+            <b>Plano {user.plan}</b>
+            <small>14 dias de teste no upgrade</small>
+          </div>
+          <button onClick={() => go("/planos")}>Ver planos</button>
+        </div>
+        <button className="logout" onClick={onLogout}>
+          <LogOut />
+          Sair
+        </button>
+      </aside>
+      {open && <div className="overlay" onClick={() => setOpen(false)} />}
+      <div className="app-main">
+        <header>
+          <button className="menu" onClick={() => setOpen(true)}>
+            <Menu />
+          </button>
+          <div />
+          <Bell />
+          <button className="user-chip" onClick={() => go("/perfil")}>
+            {user.photo ? (
+              <img src={user.photo} />
+            ) : (
+              <span>
+                {user.name
+                  .split(" ")
+                  .map((x) => x[0])
+                  .slice(0, 2)}
+              </span>
+            )}
+            <div>
+              <b>{user.name}</b>
+              <small>{user.email}</small>
+            </div>
+          </button>
+        </header>
+        <main className="page">{children}</main>
+      </div>
+    </div>
+  );
+}
+function Dashboard() {
+  const [data, setData] = useState<{
+    integrations: Integration[];
+    stats: { active: number; runs: number; savedHours: number };
+  }>();
+  useEffect(() => {
+    api("/dashboard").then(setData);
+  }, []);
+  const list = data?.integrations || [];
+  return (
+    <>
+      <div className="page-title">
+        <div>
+          <span className="eyebrow">
+            <Sparkles /> SEU PAINEL
+          </span>
+          <h1>Olá! 👋</h1>
+          <p>Acompanhe suas automações e ganhe tempo para o que importa.</p>
+        </div>
+        <button className="primary" onClick={() => go("/integracoes/nova")}>
+          <Plus /> Nova integração
+        </button>
+      </div>
+      <div className="stats">
+        <Stat
+          icon={<Zap />}
+          value={String(data?.stats.active || 0).padStart(2, "0")}
+          label="Integrações ativas"
+        />
+        <Stat
+          icon={<Gauge />}
+          value={String(data?.stats.runs || 0)}
+          label="Execuções este mês"
+        />
+        <Stat
+          icon={<Clock3 />}
+          value={`${data?.stats.savedHours || 0}h`}
+          label="Tempo economizado"
+        />
+      </div>
+      <div className="section-title">
+        <div>
+          <h2>Suas integrações</h2>
+          <p>Ative, pause ou gerencie seus fluxos.</p>
+        </div>
+        <button onClick={() => go("/integracoes/nova")}>
+          Adicionar nova →
+        </button>
+      </div>
+      <div className="integration-grid">
+        {list.map((i) => (
+          <article key={i.id}>
+            <span className={`provider ${i.provider}`}>
+              {i.provider[0].toUpperCase()}
+            </span>
+            <h3>{i.name}</h3>
+            <p>{i.provider} conectado ao n8n</p>
+            <footer>
+              <span className={i.active ? "online" : ""}>
+                ● {i.active ? "Ativa" : "Pausada"}
+              </span>
+              <b>Gerenciar ›</b>
+            </footer>
+          </article>
+        ))}
+        <button
+          className="add-integration"
+          onClick={() => go("/integracoes/nova")}
+        >
+          <Plus />
+          <b>Adicionar integração</b>
+          <small>Conecte uma nova ferramenta</small>
+        </button>
+      </div>
+    </>
+  );
+}
+function Stat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <article className="stat">
+      <span>{icon}</span>
+      <div>
+        <b>{value}</b>
+        <p>{label}</p>
+        <small>Atualizado agora</small>
+      </div>
+    </article>
+  );
+}
+function NewIntegration() {
+  const [done, setDone] = useState(false),
+    [error, setError] = useState("");
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    try {
+      await api("/integrations", {
+        method: "POST",
+        body: JSON.stringify(Object.fromEntries(new FormData(e.currentTarget))),
+      });
+      setDone(true);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  return (
+    <div className="narrow">
+      <div className="page-title">
+        <div>
+          <span className="eyebrow">
+            <Zap /> INTEGRAÇÕES
+          </span>
+          <h1>Conecte uma ferramenta</h1>
+          <p>
+            Crie a integração aqui; as credenciais sensíveis ficam protegidas no
+            n8n.
+          </p>
+        </div>
+      </div>
+      {done ? (
+        <div className="success-card">
+          <Check />
+          <h2>Integração criada!</h2>
+          <p>Agora você pode configurar o workflow correspondente no n8n.</p>
+          <button className="primary" onClick={() => go("/dashboard")}>
+            Voltar ao painel
+          </button>
+        </div>
+      ) : (
+        <form className="panel form-panel" onSubmit={submit}>
+          <label>
+            Ferramenta
+            <select name="provider" required>
+              <option value="">Selecione...</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="gmail">Gmail</option>
+              <option value="sheets">Google Sheets</option>
+              <option value="slack">Slack</option>
+            </select>
+          </label>
+          <label>
+            Nome da integração
+            <input
+              name="name"
+              required
+              minLength={2}
+              placeholder="Ex.: Atendimento comercial"
+            />
+          </label>
+          <div className="secure-note">
+            <LockKeyhole /> Tokens e senhas não são enviados pelo frontend.
+            Configure credenciais diretamente no n8n.
+          </div>
+          {error && <div className="error">{error}</div>}
+          <button className="primary submit">Criar integração</button>
+        </form>
+      )}
+    </div>
+  );
+}
+function Plans({ user }: { user: User }) {
+  const [error, setError] = useState("");
+  async function checkout(plan: string) {
+    setError("");
+    try {
+      const x = await api("/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan }),
+      });
+      location.href = x.url;
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  const plans = [
+    {
+      id: "free",
+      name: "Grátis",
+      price: "R$ 0",
+      features: ["2 integrações", "2.000 tarefas/mês", "Suporte por e-mail"],
+    },
+    {
+      id: "starter",
+      name: "Starter",
+      price: "R$ 49",
+      featured: true,
+      features: [
+        "10 integrações",
+        "20.000 tarefas/mês",
+        "Histórico de 30 dias",
+        "Suporte prioritário",
+      ],
+    },
+    {
+      id: "pro",
+      name: "Pro",
+      price: "R$ 129",
+      features: [
+        "Integrações ilimitadas",
+        "100.000 tarefas/mês",
+        "Histórico de 90 dias",
+        "Suporte dedicado",
+      ],
+    },
+  ];
+  return (
+    <>
+      <div className="center-title">
+        <span className="pill">
+          <Sparkles /> TESTE GRÁTIS POR 14 DIAS
+        </span>
+        <h1>Um plano para cada momento</h1>
+        <p>Comece grátis e evolua quando suas automações crescerem.</p>
+      </div>
+      {error && <div className="error centered">{error}</div>}
+      <div className="plans">
+        {plans.map((p) => (
+          <article className={p.featured ? "featured" : ""} key={p.id}>
+            {p.featured && <div className="popular">MAIS POPULAR</div>}
+            <h2>{p.name}</h2>
+            <div className="price">
+              {p.price}
+              <small>/mês</small>
+            </div>
+            {p.id !== "free" && <p>14 dias grátis, cobrança só depois.</p>}
+            <ul>
+              {p.features.map((f) => (
+                <li key={f}>
+                  <Check />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              disabled={p.id === user.plan}
+              className={p.featured ? "primary" : "secondary"}
+              onClick={() => p.id !== "free" && checkout(p.id)}
+            >
+              {p.id === user.plan
+                ? "Plano atual"
+                : p.id === "free"
+                  ? "Grátis para sempre"
+                  : "Testar grátis por 14 dias"}
+            </button>
+          </article>
+        ))}
+      </div>
+      <p className="billing-note">
+        <LockKeyhole /> Alterações de plano e preços são validadas
+        exclusivamente no servidor. O Stripe processa os dados de pagamento.
+      </p>
+    </>
+  );
+}
+function Profile({
+  user,
+  onUpdate,
+}: {
+  user: User;
+  onUpdate: (u: User) => void;
+}) {
+  const [draft, setDraft] = useState(user),
+    [message, setMessage] = useState("");
+  function photo(file?: File) {
+    if (!file) return;
+    if (file.size > 400_000) {
+      setMessage("A imagem deve ter no máximo 400 KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setDraft({ ...draft, photo: String(reader.result) });
+    reader.readAsDataURL(file);
+  }
+  async function save() {
+    try {
+      const x = await api("/profile", {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: draft.name,
+          photo: draft.photo,
+          theme: draft.theme,
+        }),
+      });
+      onUpdate(x.user);
+      setMessage("Perfil salvo com sucesso.");
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }
+  return (
+    <div className="narrow">
+      <div className="page-title">
+        <div>
+          <span className="eyebrow">
+            <UserRound /> SUA CONTA
+          </span>
+          <h1>Perfil e aparência</h1>
+          <p>Personalize como você aparece e escolha seu tema.</p>
+        </div>
+      </div>
+      <section className="panel profile-panel">
+        <h2>Foto e informações</h2>
+        <div className="photo-row">
+          {draft.photo ? (
+            <img src={draft.photo} />
+          ) : (
+            <span>{draft.name[0]}</span>
+          )}
+          <label className="secondary">
+            <Upload /> Alterar foto
+            <input
+              type="file"
+              hidden
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => photo(e.target.files?.[0])}
+            />
+          </label>
+        </div>
+        <label>
+          Nome completo
+          <input
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          />
+        </label>
+        <label>
+          E-mail
+          <input value={draft.email} disabled />
+          <small>Entre em contato com o suporte para alterar seu e-mail.</small>
+        </label>
+        <h2>Aparência</h2>
+        <div className="themes">
+          {(["light", "dark", "system"] as const).map((t) => (
+            <button
+              className={draft.theme === t ? "selected" : ""}
+              onClick={() => setDraft({ ...draft, theme: t })}
+              key={t}
+            >
+              {t === "light" ? <Sun /> : t === "dark" ? <Moon /> : <Settings />}
+              <b>
+                {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Sistema"}
+              </b>
+            </button>
+          ))}
+        </div>
+        {message && <p className="form-message">{message}</p>}
+        <button className="primary" onClick={save}>
+          Salvar alterações
+        </button>
+      </section>
+    </div>
+  );
+}
